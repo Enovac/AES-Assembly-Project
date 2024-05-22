@@ -1,7 +1,6 @@
 org 100h
 .DATA
-
-  SBOX	DB 63H,7cH,77H,7bH,0f2H,6bH,6fH,0c5H,30H,01H,67H,2bH,0feH,0d7H,0abH,76H
+ SBOX	DB 63H,7cH,77H,7bH,0f2H,6bH,6fH,0c5H,30H,01H,67H,2bH,0feH,0d7H,0abH,76H
      	DB 0caH,82H,0c9H,7dH,0faH,59H,47H,0f0H,0adH,0d4H,0a2H,0afH,9cH,0a4H,72H,0c0H
      	DB 0b7H,0fdH,93H,26H,36H,3fH,0f7H,0ccH,34H,0a5H,0e5H,0f1H,71H,0d8H,31H,15H
      	DB 04H,0c7H,23H,0c3H,18H,96H,05H,9aH,07H,12H,80H,0e2H,0ebH,27H,0b2H,75H
@@ -19,14 +18,35 @@ org 100h
      	DB 8cH,0a1H,89H,0dH,0bfH,0e6H,42H,68H,41H,99H,2dH,0fH,0b0H,54H,0bbH,16H
    	 
   SBOXRows  EQU 16
-  SBOXCol   EQU 16 
+  SBOXCol   EQU 16       
+;==================================================================
+    Rcon db 01H, 02H, 04H, 08H, 10H, 20H, 40H, 80H, 1BH, 36H
+         db 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H
+         db 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H
+         db 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H, 00H 
+         
+    rconRows EQU 4
+    rconCol  EQU 10      
+  
 ;==================================================================
   totalColNum EQU 4
   totalRowNum EQU 4
-  state  DB 19H,0A0H,9AH,0E9H,3DH,0F4H,0C6H,0F8H,0E3H,0E2H,8DH,48H,0BEH,2BH,2AH,08H  
+  state  DB 19H,0A0H,9AH,0E9H,3DH,0F4H,0C6H,0F8H,0E3H,0E2H,8DH,48H,0BEH,2BH,2AH,08H 
+;==================================================================
+   cipherKey DB 2BH,28H,0ABH,09H,7EH,0AEH,0F7H,0CFH,15H,0D2H,15H,4FH,16H,0A6H,88H,3CH
+        
+   roundKey DB 16 DUP(?) ;Round key should be intialized<< with cipherKey
+   tempCol DB 4 DUP(?)  
+        
+   keyColNum EQU 4
+   keyRow   EQU 4
+   
+   currentRound DB 0     ;Note currentRound is ACtual Round -1 
 
   ;algorithm to access row x col y =(currentRow*colNum)+currentCol
-;===============================================================================================     
+;=============================================================================================== 
+
+
 .CODE  
 
 ShiftRows MACRO array 
@@ -132,7 +152,113 @@ LOOP StartLoop
     
 SubBytes ENDM  
 ;================================================================== 
-SubBytes state,SBOX 
+KeySchedule MACRO rk,sb
+    MOV SI,0
+    MOV CX,4
+    ;Copy The Col
+    StartColCopy:
+    MOV AX,SI
+    MOV BL,4 
+    MUL BL
+    MOV DI,AX ;SI FOR tempCol DI For key
+    ADD DI,3  ;To Acces Forth row
+    
+    MOV AL,rk[DI]
+    MOV tempCol[SI],AL   
+                     
+    INC SI
+                     
+    LOOP StartColCopy  
+    ;Now we preform RoWord on tempCol
+    MOV SI,0 
+    MOV AL,tempCol[SI]
+    
+    MOV CX,keyColNum
+    DEC CX
+    
+    shift:
+    MOV DI,SI
+    INC SI
+    MOV BL,tempCol[SI]
+    MOV tempCol[DI],BL
+    LOOP shift
+                        
+    MOV tempCol[SI],AL
+    ;Now Preform Subbytes on tempCol 
+    
+    MOV CX,keyColNum 
+    MOV SI,0 
+    XOR BX,BX
+    subb:
+    MOV BL,tempCol[SI]
+    MOV AL,SBOX[BX]
+    MOV tempCol[SI],AL 
+    
+    INC SI
+    Loop subb
+    ;XOR KEY,RCON,TEMPCOL
+    MOV BP,0 
+    MOV CX,keyColNum  
+    
+    XORLOOP: 
+     
+    
+    MOV SI,BP;Index TempCol
+     
+    MOV AX,SI 
+    MOV DI,SI;DI IS INDEX RCON  
+    MOV BL,rconCol
+    MUL BL
+    ADD AL,currentRound
+    MOV DI,AX
+    
+    MOV AX,SI
+    MOV BL,keyColNum
+    MUL BL
+    MOV SI,AX
+    
+    MOV AL,tempCol[BP]
+    XOR rk[SI],AL 
+    
+    MOV AL,Rcon[DI]
+    XOR rk[SI],AL
+    
+    INC BP
+    
+    LOOP XORLOOP
+    ;Now we have the First Col of round key we Xor it with other 3 cols in key
+    
+    MOV BX,0  
+    INC BX
+    FINALXOR:
+    
+      MOV CX,0
+     INNERXOR:
+       
+       MOV AX,CX 
+       MOV DL,keyColNum
+       MUL DL 
+       MOV SI,AX
+        
+       MOV DI,SI
+       ADD DI,BX
+       MOV SI,DI
+       DEC SI
+           
+       MOV AL,rk[SI]
+       XOR rk[DI],AL
+       
+     INC CX
+     CMP CX,4 
+     JNZ INNERXOR
+    
+    
+     INC BX
+     CMP BX,4
+     JNZ FINALXOR 
+     INC currentRound
+
+KeySchedule ENDM          
  
     
 ret      
