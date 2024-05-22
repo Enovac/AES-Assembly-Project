@@ -29,6 +29,7 @@ org 100h
     rconCol  EQU 10      
   
 ;==================================================================
+
   totalColNum EQU 4
   totalRowNum EQU 4
   state  DB 19H,0A0H,9AH,0E9H,3DH,0F4H,0C6H,0F8H,0E3H,0E2H,8DH,48H,0BEH,2BH,2AH,08H 
