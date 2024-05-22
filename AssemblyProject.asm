@@ -58,10 +58,23 @@ org 100h
     JNZ NextRowLoop     
     
  ShiftRows ENDM 
+  AddRoundKey MACRO st,k
+    Mov SI,0 ;XORING START AT 0  
+    Mov AX,totalColNum
+    Mov BL,totalRowNum
+    Mul BL
+    Mov CX,AX ;TotalNumber of iterations 16 times (Total Number of cells)
+    
+    StartLoop:
+    MOV AL,k[SI]
+    XOR st[SI],AL   
+    INC SI
+    LOOP StartLoop      
+                        
+AddRoundKey ENDM
  
  
- 
- ShiftRows state
+
 
  
 ret
