@@ -29,7 +29,14 @@ org 100h
     rconCol  EQU 10      
   
 ;==================================================================
-
+    MixCol DB 02H,03H,01H,01H,01H,02H,03H,01H,01H,01H,02H,03H,03H,01H,01H,02H
+    
+    
+    
+    tempMixCol DB 00H,00H,00H,00H
+          
+  
+;==================================================================
   totalColNum EQU 4
   totalRowNum EQU 4
   state  DB 19H,0A0H,9AH,0E9H,3DH,0F4H,0C6H,0F8H,0E3H,0E2H,8DH,48H,0BEH,2BH,2AH,08H 
@@ -260,7 +267,94 @@ KeySchedule MACRO rk,sb
      INC currentRound
 
 KeySchedule ENDM          
+;================================================================== 
+MixColumns MACRO st 
+  Mov DL,0;Curr Col  
+  LoopOverState:
+  
+  
+  
+  MOV BL,0;MixCol Row
+  LoopOverMixCol:
+  
+  
+  MOV BH,0;Each Element COL FOR MIXCOL, ROW FOR STATE
+  LoopOverRow:  
+  MOV AX,04H
+  MUL BH
+   
+  ADD AL,DL
+  MOV SI,AX;Current State Index
+  
+  MOV AX,04H
+  MUL BL
+  ADD AL,BH 
+  MOV DI,AX;INDEX MIXCOL
+  
+  CMP MixCol[DI],1
+  JNZ SKIP1  
+  
+  MOV CX,0
+  MOV CL,BL
+  MOV BP,CX
+  MOV CL,st[SI]
+  XOR tempMixCol[BP],CL
+  JMP END
+  SKIP1:   
+  MOV AH,2
+  MOV AL,st[SI]
+  MUL AH
+  CMP AH,00H
+  JZ NoOverFlow
+  XOR AL,1BH
+  
+  
+  NoOverFlow:
+  CMP MixCol[DI],3
+  JNZ SKIP3
+  XOR AL,st[SI]
+  
+   
+  
+  SKIP3:
+  MOV CX,0
+  MOV CL,BL
+  MOV BP,CX
+  XOR tempMixCol[BP],AL
+  END:
+  
  
+  INC BH
+  CMP BH,4  
+  JNZ LoopOverRow
+  
+  INC BL
+  CMP BL,4
+  JNZ LoopOverMixCol ;Wont do anythgin special here
+  
+  ;;Loop to copy from temp to actual
+   ;dl is  current col 
+  MOV CX,0 
+  COPYCONTENTS:
+  MOV AX,4
+  MUL CL
+  ADD AL,DL
+  MOV SI,AX
+  MOV DI,CX
+  MOV AL,tempMixCol[DI]
+  
+  MOV AH,0 
+  MOV tempMixCol[DI],AH ;reset temp col
+  MOV st[SI],AL
+   
+  INC CL 
+  CMP CL,4 
+  JNZ COPYCONTENTS
+   
+  INC DL
+  CMP DL,4
+  JNZ LoopOverState 
+MixColumns ENDM  
     
 ret      
 
