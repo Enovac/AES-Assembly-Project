@@ -39,11 +39,10 @@ org 100h
 ;==================================================================
   totalColNum EQU 4
   totalRowNum EQU 4
-  state  DB 19H,0A0H,9AH,0E9H,3DH,0F4H,0C6H,0F8H,0E3H,0E2H,8DH,48H,0BEH,2BH,2AH,08H 
+  state  DB 32H,88H,31H,0E0H,43H,5AH,31H,37H,0F6H,30H,98H,07H,0A8H,8DH,0A2H,34H
 ;==================================================================
    cipherKey DB 2BH,28H,0ABH,09H,7EH,0AEH,0F7H,0CFH,15H,0D2H,15H,4FH,16H,0A6H,88H,3CH
-        
-   roundKey DB 16 DUP(?) ;Round key should be intialized<< with cipherKey
+
    tempCol DB 4 DUP(?)  
         
    keyColNum EQU 4
@@ -112,11 +111,11 @@ ShiftRows MACRO array
     Mul BL
     Mov CX,AX ;TotalNumber of iterations 16 times (Total Number of cells)
     
-    StartLoop:
+    IDKLOOP:
     MOV AL,k[SI]
     XOR st[SI],AL   
     INC SI
-    LOOP StartLoop      
+    LOOP IDKLOOP      
                         
 AddRoundKey ENDM 
  
@@ -137,7 +136,7 @@ MOV BL,totalRowNum
 Mul BL
 MOV CX,AX
 MOV SI,0
-StartLoop: 
+StartLoops: 
 MOV DL,k[SI]
 MOV BL,DL
 AND BL,0FH ;now BL contains Lower Value only  (COL INDEX)
@@ -156,7 +155,7 @@ MOV k[SI],AL
 
 
 INC SI    
-LOOP StartLoop    
+LOOP StartLoops    
     
 SubBytes ENDM  
 ;================================================================== 
@@ -355,7 +354,43 @@ MixColumns MACRO st
   CMP DL,4
   JNZ LoopOverState 
 MixColumns ENDM  
-    
+;==================================================================
+                                                                          
+
+MOV CX,11  
+
+EncryptionLoop:
+
+PUSH CX  
+
+CMP CX,11
+JZ FirstRound                                                            
+SubBytes  state,SBOX                                                                    
+ShiftRows  state
+ 
+POP CX
+PUSH CX 
+CMP CX,1
+JZ LastRound
+                                                                                        
+MixColumns state
+
+
+LastRound:
+
+KeySchedule cipherKey,SBOX 
+
+FirstRound:
+AddRoundKey state,cipherKey 
+
+POP CX 
+LOOP EncryptionLoop                                        
+
+;==================================================================
+
+
+
+
 ret      
 
 
