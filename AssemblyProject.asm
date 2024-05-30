@@ -39,10 +39,14 @@ org 100h
 ;==================================================================
   totalColNum EQU 4
   totalRowNum EQU 4
-  state  DB 32H,88H,31H,0E0H,43H,5AH,31H,37H,0F6H,30H,98H,07H,0A8H,8DH,0A2H,34H
+  state  DB 16 DUP(?)
+  enterStateMsg db "Please enter State : ", 13, 10, '$' 
+  outputMsg db "output : ", 13, 10, '$'
 ;==================================================================
-   cipherKey DB 2BH,28H,0ABH,09H,7EH,0AEH,0F7H,0CFH,15H,0D2H,15H,4FH,16H,0A6H,88H,3CH
-
+   cipherKey DB 16 DUP(?)
+    enterCipherMsg db "Please enter CipherKey : ", 13, 10, '$'  
+    printNewLine db 13, 10,'$' 
+    printSpace db " ",'$'
    tempCol DB 4 DUP(?)  
         
    keyColNum EQU 4
@@ -355,7 +359,9 @@ MixColumns MACRO st
   JNZ LoopOverState 
 MixColumns ENDM  
 ;==================================================================
-                                                                          
+                                                                      
+Call EnterState
+Call EnterCipher
 
 MOV CX,11  
 
@@ -386,17 +392,212 @@ AddRoundKey state,cipherKey
 POP CX 
 LOOP EncryptionLoop                                        
 
-;==================================================================
-
-
-
-
-ret      
-
-
- 
-
+Call PrintState  
+ret  
+;==================================================================    
+EnterState PROC
+   mov dx, offset enterStateMsg
+   mov ah, 09h
+   int 21h 
+     
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h  
+     
+   mov CX,16
+   MOV SI,0 
+   StartEntering:
+   XOR AX,AX
+   XOR BX,BX 
     
+   mov ah, 01h        
+   int 21h   ;;Al now contains the number         
+  
+   cmp al,'a'
+   JL nota
+   SUB al,57H 
+   JMP sub1
+   nota:
+   cmp al,'A'
+   JL nottA 
+   SUB al,37H
+   JMP sub1 
+   
+   nottA:
+   SUB al,30H
+   sub1:
+   MOV BL,10H
+   MUL BL
+   MOV BL,AL ;NOW BL HAS BIGGER NUM
+      
+   mov ah, 01h        
+   int 21h           
+ 
+   cmp al,'a'
+   JL notSa
+   SUB al,57H 
+   JMP subS1
+   notSa:
+   cmp al,'A'
+   JL nottSA 
+   SUB al,37H
+   JMP subS1 
+   
+   nottSA:
+   SUB al,30H
+   subS1:
+   ADD BL,AL 
+   MOV state[SI],BL
+      
+   
+   INC SI
+   Loop StartEntering      
+ret    
+EnterState ENDP	
+;================================================================== 
+EnterCipher PROC   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h 
+   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h
+    
+   mov dx, offset enterCipherMsg
+   mov ah, 09h
+   int 21h 
+   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h
+     
+   mov CX,16
+   MOV SI,0 
+   zStartEntering:
+   XOR AX,AX
+   XOR BX,BX 
+    
+   mov ah, 01h        
+   int 21h   ;;Al now contains the number         
+  
+   cmp al,'a'
+   JL znota
+   SUB al,57H 
+   JMP zsub1
+   znota:
+   cmp al,'A'
+   JL znottA 
+   SUB al,37H
+   JMP zsub1 
+   
+   znottA:
+   SUB al,30H
+   zsub1:
+   MOV BL,10H
+   MUL BL
+   MOV BL,AL ;NOW BL HAS BIGGER NUM
+      
+   mov ah, 01h        
+   int 21h           
+ 
+   cmp al,'a'
+   JL znotSa
+   SUB al,57H 
+   JMP zsubS1
+   znotSa:
+   cmp al,'A'
+   JL znottSA 
+   SUB al,37H
+   JMP zsubS1 
+   
+   znottSA:
+   SUB al,30H
+   zsubS1:
+   ADD BL,AL 
+   MOV cipherKey[SI],BL
+          
+   INC SI
+   Loop zStartEntering      
+ret    
+EnterCipher ENDP 
+;================================================================== 
+PrintState PROC  
+    
+ mov dx, offset printNewLine
+ mov ah, 09h
+ int 21h 
+ 
+ mov dx, offset printNewLine
+ mov ah, 09h
+ int 21h
+    
+ mov dx, offset outputMsg
+ mov ah, 09h
+ int 21h  
+   
+ MOV CX,16 
+ MOV SI,0
+ StartPrinting:
+ MOV AX,CX
+ MOV BL,4
+ DIV BL
+ CMP AH,0
+ JNZ notNewLine 
+ mov dx, offset printNewLine
+ mov ah, 09h
+ int 21h
+    
+ notNewLine: 
+ 
+ 
+ 
+ 
+ XOR AX,AX
+ MOV AL,state[SI]
+ MOV BL,10H
+ DIV BL
+ ;;AL HAS NUMBER TO BE PRINTED FIRST AH SECOND NUMBER
+ CMP AL,0AH
+ JL skipA
+ ADD AL,57H
+ JMP printA
+ skipA:
+ ADD AL,30H
+ printA: 
+ MOV BL,AH
+ 
+ mov ah, 02h     
+ mov dl, al     
+ int 21h
+  
+ MOV AL,BL 
+ ;Print second
+ CMP AL,0AH
+ JL ZskipA
+ ADD AL,57H
+ JMP ZprintA
+ ZskipA:
+ ADD AL,30H
+ ZprintA: 
+ MOV BL,AH
+ 
+ mov ah, 02h     
+ mov dl, al     
+ int 21h
+ 
+ mov dx, offset printSpace
+ mov ah, 09h
+ int 21h
+ 
+ 
+ INC SI
+ LOOP StartPrinting 
+  
+    
+    
+ret    
+PrintState ENDP    
 
 
 
