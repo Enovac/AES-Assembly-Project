@@ -547,6 +547,9 @@ PrintState PROC
  mov dx, offset printNewLine
  mov ah, 09h
  int 21h
+ mov dx, offset printNewLine
+ mov ah, 09h
+ int 21h
     
  notNewLine: 
  
