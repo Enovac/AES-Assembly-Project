@@ -39,12 +39,12 @@ org 100h
 ;==================================================================
   totalColNum EQU 4
   totalRowNum EQU 4
-  state  DB 16 DUP(?)
-  enterStateMsg db "Please enter State : ", 13, 10, '$' 
+  state  DB 16 DUP(0)
+  enterStateMsg db "Please enter State as a matrix : ", 13, 10, '$' 
   outputMsg db "output : ", 13, 10, '$'
 ;==================================================================
-   cipherKey DB 16 DUP(?)
-    enterCipherMsg db "Please enter CipherKey : ", 13, 10, '$'  
+   cipherKey DB 16 DUP(0)
+    enterCipherMsg db "Please enter CipherKey as a matrix : ", 13, 10, '$'  
     printNewLine db 13, 10,'$' 
     printSpace db " ",'$'
    tempCol DB 4 DUP(?)  
@@ -56,7 +56,16 @@ org 100h
 
   ;algorithm to access row x col y =(currentRow*colNum)+currentCol
 ;=============================================================================================== 
+  stateBuffer  db 17,?, 16 dup(0)
+  cipherBuffer db 17,?, 16 dup(0)  
+  
+  askStateMsg db "Press (1) to enter state as a string and (2) to enter state as a matrix : ", 13, 10, '$'  
+  askCipherMsg db "Press (1) to enter Cipher as a string and (2) to enter Cipher as a matrix : ", 13, 10, '$'
+  
+  enterCipherAsStringMsg db "Please enter CipherKey as a String : ", 13, 10, '$' 
+  enterStateAsStringMsg db "Please enter State as a String : ", 13, 10, '$' 
 
+;===============================================================================================
 
 .CODE  
 
@@ -358,10 +367,34 @@ MixColumns MACRO st
   CMP DL,4
   JNZ LoopOverState 
 MixColumns ENDM  
-;==================================================================
-                                                                      
+;================================================================== 
+
+
+Call askState 
+
+CMP AL,'2'
+JNZ stateString
 Call EnterState
+JMP endStateAsk  
+
+stateString:
+CALL EnterStateString
+
+endStateAsk:  
+
+Call askCipher 
+
+CMP AL,'2'
+JNZ cipherString
 Call EnterCipher
+JMP endStateAsk
+
+cipherString:
+CALL EnterCipherString
+
+endCipherAsk:                                                                   
+
+
 
 MOV CX,11  
 
@@ -395,7 +428,14 @@ LOOP EncryptionLoop
 Call PrintState  
 ret  
 ;==================================================================    
-EnterState PROC
+EnterState PROC  
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h 
+   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h 
    mov dx, offset enterStateMsg
    mov ah, 09h
    int 21h 
@@ -601,9 +641,112 @@ PrintState PROC
     
 ret    
 PrintState ENDP    
-
-
-
-
-
+;==================================================================
+askState PROC 
+      
+   mov dx, offset askStateMsg
+   mov ah, 09h
+   int 21h
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h 
+   mov ah, 01h        
+   int 21h   
+ret
+askState ENDP    
+;==================================================================
+askCipher PROC 
+    mov dx, offset printNewLine
+    mov ah, 09h
+    int 21h 
+ 
+    mov dx, offset printNewLine
+    mov ah, 09h
+    int 21h
+      
+   mov dx, offset askCipherMsg
+   mov ah, 09h
+   int 21h                   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h 
+   mov ah, 01h        
+   int 21h     
+ret
+askCipher ENDP 
+;==================================================================
+EnterStateString  PROC  
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h 
+   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h
+    
+   mov dx, offset enterStateAsStringMsg
+   mov ah, 09h
+   int 21h 
+   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h
+    
+    mov dx, offset stateBuffer
+	mov ah, 0ah
+	int 21h    
+	
+	MOV SI,2
+	MOV DI,0
+	MOV CX,16
+	continueCopying:     
+	MOV DL,stateBuffer[SI] 
+	CMP DL,0DH
+	JZ terminated
+	MOV state[DI],DL
+	INC DI
+	INC SI
+	LOOP continueCopying     
+	terminated:
+       
+ret
+EnterStateString ENDP  
+;==================================================================
+EnterCipherString  PROC   
+    
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h 
+   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h
+    
+   mov dx, offset enterCipherAsStringMsg
+   mov ah, 09h
+   int 21h 
+   
+   mov dx, offset printNewLine
+   mov ah, 09h
+   int 21h
+    
+    mov dx, offset cipherBuffer
+	mov ah, 0ah
+	int 21h    
+	
+	MOV SI,2
+	MOV DI,0
+	MOV CX,16
+	continueCopyingci: 
+	MOV DL,cipherBuffer[SI]  
+	CMP DL,0DH
+	JZ terminator
+	MOV cipherKey[DI],DL
+	INC DI
+	INC SI
+	LOOP continueCopyingci                           
+    terminator:                        
+ret
+EnterCipherString ENDP  
            
+
