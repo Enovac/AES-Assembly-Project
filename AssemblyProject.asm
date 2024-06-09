@@ -56,8 +56,8 @@ org 100h
 
   ;algorithm to access row x col y =(currentRow*colNum)+currentCol
 ;=============================================================================================== 
-  stateBuffer  db 17,?, 16 dup(0)
-  cipherBuffer db 17,?, 16 dup(0)  
+  stateBuffer  db 17,?, 18 dup(0)
+  cipherBuffer db 17,?, 18 dup(0)  
   
   askStateMsg db "Press (1) to enter state as a string and (2) to enter state as a matrix : ", 13, 10, '$'  
   askCipherMsg db "Press (1) to enter Cipher as a string and (2) to enter Cipher as a matrix : ", 13, 10, '$'
