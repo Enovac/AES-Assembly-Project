@@ -40,11 +40,11 @@ org 100h
   totalColNum EQU 4
   totalRowNum EQU 4
   state  DB 16 DUP(0)
-  enterStateMsg db "Please enter State as a Matrix (in the form 12ae.. untill 32Chars) : ", 13, 10, '$' 
+  enterStateMsg db "Please enter State as a Matrix (takes hexa as input in the form 12ae.. untill 32Chars) : ", 13, 10, '$' 
   outputMsg db "output as a Matrix : ", 13, 10, '$'
 ;==================================================================
    cipherKey DB 16 DUP(0)
-    enterCipherMsg db "Please enter CipherKey as a Matrix (in the form 12ae.. untill 32Chars): ", 13, 10, '$'  
+    enterCipherMsg db "Please enter CipherKey as a Matrix (takes hexa as input in the form 12ae.. untill 32Chars): ", 13, 10, '$'  
     printNewLine db 13, 10,'$' 
     printSpace db " ",'$'
    tempCol DB 4 DUP(?)  
