@@ -260,92 +260,94 @@ KeySchedule MACRO rk,sb
 KeySchedule ENDM          
 ;================================================================== 
 MixColumns MACRO st 
-  Mov DL,0;Curr Col  
-  LoopOverState:
-  
-  
-  
-  MOV BL,0;MixCol Row
-  LoopOverMixCol:
-  
-  
-  MOV BH,0;Each Element COL FOR MIXCOL, ROW FOR STATE
-  LoopOverRow:  
-  MOV AX,04H
-  MUL BH
-   
-  ADD AL,DL
-  MOV SI,AX;Current State Index
-  
-  MOV AX,04H
-  MUL BL
-  ADD AL,BH 
-  MOV DI,AX;INDEX MIXCOL
-  
-  CMP MixCol[DI],1
-  JNZ SKIP1  
-  
-  MOV CX,0
-  MOV CL,BL
-  MOV BP,CX
-  MOV CL,st[SI]
-  XOR tempMixCol[BP],CL
-  JMP END
-  SKIP1:   
-  MOV AH,2
-  MOV AL,st[SI]
-  MUL AH
-  CMP AH,00H
-  JZ NoOverFlow
-  XOR AL,1BH
-  
-  
-  NoOverFlow:
-  CMP MixCol[DI],3
-  JNZ SKIP3
-  XOR AL,st[SI]
-  
-   
-  
-  SKIP3:
-  MOV CX,0
-  MOV CL,BL
-  MOV BP,CX
-  XOR tempMixCol[BP],AL
-  END:
-  
- 
-  INC BH
-  CMP BH,4  
-  JNZ LoopOverRow
-  
-  INC BL
-  CMP BL,4
-  JNZ LoopOverMixCol ;Wont do anythgin special here
-  
-  ;;Loop to copy from temp to actual
-   ;dl is  current col 
-  MOV CX,0 
-  COPYCONTENTS:
-  MOV AX,4
-  MUL CL
-  ADD AL,DL
-  MOV SI,AX
-  MOV DI,CX
-  MOV AL,tempMixCol[DI]
-  
-  MOV AH,0 
-  MOV tempMixCol[DI],AH ;reset temp col
-  MOV st[SI],AL
-   
-  INC CL 
-  CMP CL,4 
-  JNZ COPYCONTENTS
-   
-  INC DL
-  CMP DL,4
-  JNZ LoopOverState 
-MixColumns ENDM  
+   local startMix
+    local endMix
+    mov si, 0
+    mov di, 0
+    mov al, 0
+    mov bl, 0
+    mov cl, 0
+    mov dl, 0   
+    startMix: cmp si, 4
+    jz endMix
+    mov di, 0
+    ;first row mul 
+    mov al, st[si]
+    mult_2
+    mov bl, al
+    mov al, st[si+4]
+    mult_3 4
+    xor bl, al
+    xor bl, st[si+8]
+    xor bl, st[si+12]
+    mov tempMixCol[di], bl
+    inc di   
+    ;second row mul 
+    mov ax, 0
+    mov bl, st[si]
+    mov al, st[si+4]
+    mult_2
+    xor bl, al
+    mov al, st[si+8]
+    mult_3 8
+    xor bl, al
+    xor bl, st[si+12]
+    mov tempMixCol[di], bl
+    inc di 
+    ;r third row mul
+    mov bl, st[si]
+    xor bl, st[si+4]
+    mov al, st[si+8]
+    mult_2
+    xor bl, al
+    mov al, st[si+12]
+    mult_3 12
+    xor bl, al
+    mov tempMixCol[di], bl
+    inc di
+    ; fourth row mul
+    mov al, st[si]
+    mult_3 0
+    mov bl, st[si+4]
+    xor bl, al
+    xor bl, st[si+8]
+    mov al, st[si+12]
+    mult_2
+    xor bl, al
+    mov tempMixCol[di], bl
+    ; finish and replace with values
+    mov di, 0  
+    mov al, tempMixCol[0]
+    mov st[si], al
+    mov al, tempMixCol[1]
+    mov st[si+4], al  
+    mov al, tempMixCol[2]
+    mov st[si+8], al
+    mov al, tempMixCol[3]
+    mov st[si+12], al
+    inc si
+    jmp startMix
+      
+    endMix: 
+MixColumns ENDM
+
+macro mult_2 
+     local carry
+     local endmult_2
+     mov cl , 2
+     mul cl
+     jc carry
+     jmp endmult_2
+     carry: 
+     XOR al, 1bh 
+endmult_2:     
+endm
+
+
+macro mult_3 x
+    mult_2
+    xor al, state[si+x]
+    endm
 ;================================================================== 
 
 
