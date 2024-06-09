@@ -40,11 +40,11 @@ org 100h
   totalColNum EQU 4
   totalRowNum EQU 4
   state  DB 16 DUP(0)
-  enterStateMsg db "Please enter State as a matrix : ", 13, 10, '$' 
-  outputMsg db "output as a matrix : ", 13, 10, '$'
+  enterStateMsg db "Please enter State as a Matrix (in the form 12ae.. untill 32Chars) : ", 13, 10, '$' 
+  outputMsg db "output as a Matrix : ", 13, 10, '$'
 ;==================================================================
    cipherKey DB 16 DUP(0)
-    enterCipherMsg db "Please enter CipherKey as a matrix : ", 13, 10, '$'  
+    enterCipherMsg db "Please enter CipherKey as a Matrix (in the form 12ae.. untill 32Chars): ", 13, 10, '$'  
     printNewLine db 13, 10,'$' 
     printSpace db " ",'$'
    tempCol DB 4 DUP(?)  
@@ -59,8 +59,8 @@ org 100h
   stateBuffer  db 17,?, 18 dup(0)
   cipherBuffer db 17,?, 18 dup(0)  
   
-  askStateMsg db "Press (1) to enter state as a string and (2) to enter state as a matrix : ", 13, 10, '$'  
-  askCipherMsg db "Press (1) to enter Cipher as a string and (2) to enter Cipher as a matrix : ", 13, 10, '$'
+  askStateMsg db "Press (1) to enter state as a String and (2) to enter state as a Matrix : ", 13, 10, '$'  
+  askCipherMsg db "Press (1) to enter Cipher as a String and (2) to enter Cipher as a Matrix : ", 13, 10, '$'
   
   enterCipherAsStringMsg db "Please enter CipherKey as a String : ", 13, 10, '$' 
   enterStateAsStringMsg db "Please enter State as a String : ", 13, 10, '$'  
@@ -134,42 +134,20 @@ ShiftRows MACRO array
 AddRoundKey ENDM 
  
 ;================================================================== 
-SubBytes MACRO k,sb
-;For this function we replace all keys with proper SBOX values
-;The idea is if given 19 the 1 is the row of the SBOX and the 9 is the colmn
-;Then the algorithm of (currRow*totalCol)+currCol
-;To seperate the values this can be done by first anding with 0FH to get 09H
-;Then shift left*4 and and with 0FH to get 01H  
-
-XOR AX,AX ;resetting AX
-XOR DX,DX ;resetting DX
-XOR BX,BX ;resetting BX
-
-MOV AL,totalColNum
-MOV BL,totalRowNum
-Mul BL
-MOV CX,AX
+SubBytes MACRO k,sb 
+    
+    
+MOV CX,16
 MOV SI,0
 StartLoops: 
-MOV DL,k[SI]
-MOV BL,DL
-AND BL,0FH ;now BL contains Lower Value only  (COL INDEX)
-SHR DL, 4  ;Shifting AL 4 Times
-AND DL,0FH ;now DL contains Higher Value only (ROW INDEX)
-;Now we will calculate index in SBOX
-MOV AX,SBOXCol
-MUL DX
-ADD AX,BX
-MOV DI,AX
-MOV AL,sb[DI]
-MOV k[SI],AL
+XOR BX,BX 
 
-
-
-
+MOV BL,k[SI]
+MOV AL,sb[BX]
+MOV k[SI],AL 
 
 INC SI    
-LOOP StartLoops    
+LOOP StartLoops      
     
 SubBytes ENDM  
 ;================================================================== 
@@ -388,7 +366,7 @@ Call askCipher
 CMP AL,'2'
 JNZ cipherString
 Call EnterCipher
-JMP endStateAsk
+JMP endCipherAsk
 
 cipherString:
 CALL EnterCipherString
