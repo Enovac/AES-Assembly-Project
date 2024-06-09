@@ -41,7 +41,7 @@ org 100h
   totalRowNum EQU 4
   state  DB 16 DUP(0)
   enterStateMsg db "Please enter State as a matrix : ", 13, 10, '$' 
-  outputMsg db "output : ", 13, 10, '$'
+  outputMsg db "output as a matrix : ", 13, 10, '$'
 ;==================================================================
    cipherKey DB 16 DUP(0)
     enterCipherMsg db "Please enter CipherKey as a matrix : ", 13, 10, '$'  
@@ -63,7 +63,8 @@ org 100h
   askCipherMsg db "Press (1) to enter Cipher as a string and (2) to enter Cipher as a matrix : ", 13, 10, '$'
   
   enterCipherAsStringMsg db "Please enter CipherKey as a String : ", 13, 10, '$' 
-  enterStateAsStringMsg db "Please enter State as a String : ", 13, 10, '$' 
+  enterStateAsStringMsg db "Please enter State as a String : ", 13, 10, '$'  
+  outputStringMsg db "output as a String : ", 13, 10, '$'
 
 ;===============================================================================================
 
@@ -424,7 +425,7 @@ AddRoundKey state,cipherKey
 
 POP CX 
 LOOP EncryptionLoop                                        
-
+Call PrintString
 Call PrintState  
 ret  
 ;==================================================================    
@@ -748,5 +749,32 @@ EnterCipherString  PROC
     terminator:                        
 ret
 EnterCipherString ENDP  
-           
-
+;==================================================================
+PrintString PROC   
+ mov dx, offset printNewLine
+ mov ah, 09h
+ int 21h 
+ 
+ mov dx, offset printNewLine
+ mov ah, 09h
+ int 21h
+    
+ mov dx, offset outputStringMsg
+ mov ah, 09h
+ int 21h     
+ 
+ mov dx, offset printNewLine
+ mov ah, 09h
+ int 21h
+   
+ MOV CX,16 
+ MOV SI,0    
+ Printing:
+ mov ah, 02h     
+ mov dl, state[SI]     
+ int 21h
+ INC SI
+ LOOP Printing   
+          
+ ret
+ PrintString ENDP         
